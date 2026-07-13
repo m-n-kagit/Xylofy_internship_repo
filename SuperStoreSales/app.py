@@ -16,7 +16,8 @@ from xgboost import XGBRegressor
 st.set_page_config(page_title="SuperStore Sales Dashboard", layout="wide")
 sns.set_theme(style="whitegrid")
 
-DATA_PATH = Path(__file__).resolve().parent / "superstore.xlsx"
+DATASET_NAME = "rohitsahoo/sales-forecasting"
+DATA_FILENAME = "train.csv"
 SEASON_MAP = {
     12: "Winter",
     1: "Winter",
@@ -43,9 +44,20 @@ MODEL_PARAMS = dict(
 )
 
 
+def _dataset_path() -> Path:
+    try:
+        import kagglehub
+    except ImportError as exc:
+        raise ImportError(
+            "kagglehub is required to load the dataset used in analysis2.ipynb."
+        ) from exc
+
+    dataset_root = Path(kagglehub.dataset_download(DATASET_NAME))
+    return dataset_root / DATA_FILENAME
+
 @st.cache_data(show_spinner=False)
 def load_data() -> pd.DataFrame:
-    data = pd.read_excel(DATA_PATH)
+    data = pd.read_csv(_dataset_path())
     data["Order Date"] = pd.to_datetime(data["Order Date"], errors="coerce")
     data["Ship Date"] = pd.to_datetime(data["Ship Date"], errors="coerce")
     data = data.dropna().copy()
@@ -363,7 +375,7 @@ def main():
     try:
         df = load_data()
     except Exception as exc:
-        st.error(f"Could not load the dataset from {DATA_PATH.name}: {exc}")
+        st.error(f"Could not load the notebook dataset ({DATASET_NAME}): {exc}")
         st.stop()
 
     year_sales = yearly_sales(df)
@@ -446,3 +458,8 @@ def main():
 if __name__ == "__main__":
     main()
     
+
+
+
+
+
